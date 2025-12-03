@@ -26,6 +26,10 @@ if st.button("Increment"):
 if st.button("Reset"):
     st.session_state.count = 0  # Another button shares the same state store
 
+def increment_count():  # callback that increments a "saves" counter in `st.session_state`.
+    """Erhöht den 'saves'-Zähler in session_state."""
+    st.session_state.count += 1
+
 st.caption("State lives across reruns. Combine it with text inputs and selects.")
 
 st.divider()
@@ -35,10 +39,15 @@ with st.form("profile"):
     name = st.text_input("Name")  # Widgets inside a form defer updates
     role = st.selectbox("Role", ["Engineer", "Designer", "PM"])
     subscribed = st.checkbox("Subscribe to updates")
-    submitted = st.form_submit_button("Save")  # Submission triggers a single rerun
+    submitted = st.form_submit_button("Save", on_click=increment_count)  # Submission triggers a single rerun
+                
+if submitted:    # Die Validierung muss erst nach (!) der submitted-Prüfung erfolgen.
+    if name == "":
+        st.error("Please enter a valid name")
+    else: 
+        st.success(f"Saved {name or 'anonymous'} ({role}) | subscribed={subscribed}")  # Form values available after submit
 
-if submitted:
-    st.success(f"Saved {name or 'anonymous'} ({role}) | subscribed={subscribed}")  # Form values available after submit
+st.write(st.session_state)
 
 st.markdown(
     """

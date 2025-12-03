@@ -24,16 +24,57 @@ data = pd.DataFrame(
     }
 )
 
+rep_filter = st.text_input("Filter for rep:", placeholder=list(data["rep"].unique()))
+
+# Wenn der Benutzer einen Namen eingegeben hat, aber dieser ungültig ist, zeige den Fehler
+if rep_filter != "" and rep_filter not in data["rep"].values:
+    st.error(f"Bitte gib einen gültigen Repräsentanten-Namen ein : ({list(data['rep'].unique())})") 
+    # Es ist auch eine gute Praxis, hier st.stop() zu verwenden, um den Rest des Skripts zu stoppen
+    st.stop()
+       
 region_filter = st.multiselect(
     "Regions", options=sorted(data["region"].unique()), default=list(data["region"].unique())
 )  # Multiselect drives the filtered view
-filtered = data[data["region"].isin(region_filter)]  # Simple filter using the selection
+
+time_filter = st.time_input("Time frame for data", value="now")
+
+filtered = data.query('region in @region_filter and rep == @rep_filter')
+#filtered = data[data["region"].isin(region_filter) & data["rep"] == rep_filter]  # Simple filter using the selection
 
 st.subheader("Table")
 st.dataframe(filtered, use_container_width=True)  # Show current slice of data
 
 st.subheader("Chart")
-st.bar_chart(filtered, x="region", y="sales")  # Visualize sales per region for the filtered set
+
+# 1. Definiere die Spalten: Zwei Spalten gleicher Breite (1:1)
+col_chart, col_metric = st.columns([1, 1])
+
+# 2. Platziere den Chart in der ersten Spalte (col_chart)
+with col_chart:
+    st.subheader("Umsatz nach Region")
+    
+    # st.bar_chart korrekt verwenden
+    st.bar_chart(filtered, x="region", y="sales")
+
+# 3. Platziere Metriken in der zweiten Spalte (col_metric)
+with col_metric:
+    st.subheader("Filter-Kennzahlen")
+    
+    # Berechne den Gesamtwert aus den gefilterten Daten für st.metric
+    total_sales = filtered["sales"].sum()
+    
+    # Berechne die Anzahl der gefilterten Zeilen
+    num_entries = len(filtered)
+    
+    # st.metric korrekt verwenden
+    st.metric("Gesamtumsatz", f"${total_sales}")
+    st.metric("Anzahl Regionen", num_entries)
+
+
+# col_chart = st.bar_chart(filtered, x="region", y="sales")  # Visualize sales per region for the filtered set
+
+# col_metric = st.metric("Data", filtered)
+#st.columns(filtered, x="region", y="sales")  # Visualize sales per region for the filtered set
 
 st.markdown(
     """
